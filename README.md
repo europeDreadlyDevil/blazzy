@@ -33,5 +33,5 @@ cargo install blazzy
 
 ## License
 
-Apache License, Version 2.0
-MIT License
+- [Apache License, Version 2.0](LICENSE-APACHE)
+- [MIT License](LICENSE-MIT)
