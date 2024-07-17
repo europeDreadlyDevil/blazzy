@@ -3,11 +3,15 @@ name = "blazzy"
 version = "0.1.0"
 edition = "2021"
 
+description = "Very fast and lightweight file system observer server that works directly with the system API"
+
+license = "MIT"
+
 [dependencies]
 winapi = { version = "0.3.9", features = ["fileapi", "synchapi", "winbase", "winnt", "handleapi", "minwinbase"] }
-clap = {version = "4.5.8", features = ["derive"]}
+clap = { version = "4.5.8", features = ["derive"] }
 tokio = { version = "1.0.0", features = ["rt", "rt-multi-thread", "macros", "io-std"] }
-actix-web = {version = "4.8.0"}
+actix-web = { version = "4.8.0" }
 lru = "0.12.3"
 atomic_refcell = "0.1.13"
 env_logger = "0.11.3"

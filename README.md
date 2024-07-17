@@ -30,3 +30,8 @@ curl 127.0.0.1:8080/get_cache
 ```
 cargo install blazzy
 ```
+
+## License
+
+Apache License, Version 2.0
+MIT License
