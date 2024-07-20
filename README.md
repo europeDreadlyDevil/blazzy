@@ -1,3 +1,6 @@
+[![Blazzy Version](https://img.shields.io/crates/v/blazzy?label=blazzy)](https://crates.io/crates/blazzy)
+
+
 ## About
 
 **Blazzy** is a very fast and lightweight file system observer server that works directly with the system API. *(for now
