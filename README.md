@@ -1,3 +1,6 @@
+[![Blazzy Version](https://img.shields.io/crates/v/blazzy?label=blazzy)](https://crates.io/crates/blazzy)
+
+
 ## About
 
 **Blazzy** is a very fast and lightweight file system observer server that works directly with the system API. *(for now
@@ -33,5 +36,5 @@ cargo install blazzy
 
 ## License
 
-Apache License, Version 2.0
-MIT License
+- [Apache License, Version 2.0](LICENSE-APACHE)
+- [MIT License](LICENSE-MIT)
