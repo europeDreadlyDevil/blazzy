@@ -1,26 +1,23 @@
 mod cli;
 mod server;
 mod observer;
-mod cacher;
+pub mod async_cacher;
+mod websocket;
 
-use std::os::windows::ffi::{OsStrExt, OsStringExt};
 use std::{env, io};
 use std::fs::File;
-use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
-use actix_web::{Responder};
-use atomic_refcell::AtomicRefCell;
 use clap::Parser;
 use tokio::{join, signal};
-use crate::cacher::Cacher;
+use crate::async_cacher::{AsyncCacher, SharedAsyncCacher};
 use crate::cli::CLI;
 use crate::observer::{Data, Observer};
 use crate::server::Server;
 
-static TIME_METRICS: [&'static str; 7] = ["nsec", "micsec", "msec", "sec", "min", "hour", "day"];
+static TIME_METRICS: [&str; 7] = ["nsec", "micsec", "msec", "sec", "min", "hour", "day"];
 
 #[tokio::main]
 async fn main() {
@@ -30,17 +27,15 @@ async fn main() {
     let with_logs = cli.with_logs();
     let with_autosave = cli.with_autosave();
     let autosave_delay = cli.autosave_delay();
+    let connection_type = cli.get_connection_type();
 
     let (sender, mut receiver) = tokio::sync::mpsc::unbounded_channel();
 
     let sender_arc = Arc::new(sender);
 
-    let cacher = Arc::new(AtomicRefCell::new(Cacher::init()));
-
-    let cacher_for_server =  cacher.clone();
-    let data_putter =  cacher.clone();
-    let data_saver_auto = cacher.clone();
-    let data_saver_exit =  cacher.clone();
+    let data_putter =  SharedAsyncCacher.clone();
+    let data_saver_auto = SharedAsyncCacher.clone();
+    let data_saver_exit =  SharedAsyncCacher.clone();
 
     let running = Arc::new(AtomicBool::new(true));
     let r = running.clone();
@@ -54,10 +49,10 @@ async fn main() {
 
     println!("Start Observing");
 
-    while running.load(Ordering::SeqCst) {
+    if running.load(Ordering::SeqCst) {
         let server_task = tokio::task::spawn(async move {
 
-            let server = Server::init(host, cacher_for_server.clone()).await.unwrap();
+            let server = Server::init(host, connection_type).await.unwrap();
             server.get_server().await.unwrap();
         });
 
@@ -89,21 +84,20 @@ async fn main() {
         });
 
         while let Some(data) = receiver.recv().await {
-            data_putter.borrow_mut().put(data.0, data.1).await;
+            data_putter.put(data.0, data.1);
         }
 
 
-        join!(server_task, observer_task, autosaver_task);
+        let _ = join!(server_task, observer_task, autosaver_task);
 
-        loop {}
     }
 }
 
-async fn get_cache<'a>(cacher: Arc<AtomicRefCell<Cacher>>) -> Vec<(PathBuf,Data)> {
+async fn get_cache<'a>(cacher: Arc<AsyncCacher>) -> Vec<(PathBuf, Data)> {
     let mut vec = vec![];
-    let data = cacher.borrow_mut();
+    let data = cacher;
     for data in data.get().await {
-        vec.push((data.0.clone(), data.1.clone()))
+        vec.push((data.0, data.1))
     }
     vec
 }
@@ -115,7 +109,7 @@ async fn save_state(data: Vec<(PathBuf, Data)>) -> io::Result<()> {
     Ok(())
 }
 
-async fn autosave(data_saver: Arc<AtomicRefCell<Cacher>>) {
+async fn autosave(data_saver: Arc<AsyncCacher>) {
     let cache = get_cache(data_saver).await;
     if let Err(e) = save_state(cache).await {
         eprintln!("{}", e);

@@ -6,7 +6,7 @@ only for Windows)*
 ## How it works
 
 ```
-blazzy -p "C:\\" -l -a -d "10:min"
+blazzy -p "C:\\" -l -a -d "10:min" -c r
 ```
 
 This command launches blazzy with viewing the entire directory, with auto-saving changes to a file every 10 minutes

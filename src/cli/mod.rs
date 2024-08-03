@@ -1,7 +1,9 @@
 use clap::Parser;
+use crate::server::ConnectionType;
 
 #[derive(Parser, Debug)]
 #[command(version, about)]
+#[warn(clippy::upper_case_acronyms)]
 pub struct CLI {
     ///Observing path
     #[arg(short, long)]
@@ -17,6 +19,9 @@ pub struct CLI {
     autosave: bool,
     #[arg(short='d', long, default_value = "5:min")]
     autosave_delay: String,
+    ///Connection type (w - Websocket, r - REST)
+    #[arg(short,long)]
+    connection_type: char
 }
 
 impl CLI {
@@ -35,5 +40,12 @@ impl CLI {
     }
     pub fn autosave_delay(&self) -> String {
         self.autosave_delay.clone()
+    }
+    pub fn get_connection_type(&self) -> ConnectionType {
+        match self.connection_type {
+            'w' => ConnectionType::Websocket,
+            'r' => ConnectionType::REST,
+            _ => ConnectionType::Unknown
+        }
     }
 }

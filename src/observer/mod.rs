@@ -16,7 +16,6 @@ use serde::Serialize;
 use winapi::um::minwinbase::GetFileExInfoStandard;
 
 pub struct Observer {
-    path: Vec<u16>,
     handle: HANDLE,
     dir_handle: HANDLE,
     buffer: [u8; 8192],
@@ -58,7 +57,6 @@ impl Observer {
         }
 
         Self {
-            path,
             handle,
             dir_handle,
             buffer: [0u8; 8192],
@@ -109,7 +107,7 @@ impl Observer {
                             3 => Action::Modified,
                             4 => Action::RenamedIn,
                             5 => Action::RenamedOut,
-                            _ => Action::UnknownAction,
+                            _ => Action::Unknown,
                         };
 
                         if with_logs { println!("{action:?}: {filename:?}"); }
@@ -119,7 +117,7 @@ impl Observer {
                             Ok(metadata) => {
                                 sender.send((PathBuf::from(file_path.to_string()), Data::new(action, Some(metadata)))).unwrap();
                             }
-                            Err(e) => {
+                            Err(_) => {
                                 sender.send((PathBuf::from(file_path.to_string()), Data::new(action, None))).unwrap();
                             }
                         };
@@ -190,8 +188,8 @@ impl Observer {
 
 }
 
-#[derive(Serialize, Debug, Clone)]
-struct MetadataWrapper {
+#[derive(Serialize, Debug, Clone, PartialEq)]
+pub struct MetadataWrapper {
     file_type: String,
     is_dir: bool,
     is_file: bool,
@@ -219,7 +217,7 @@ impl From<&Metadata> for MetadataWrapper {
     }
 }
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Clone, PartialEq)]
 pub struct Data {
     action: Action,
     metadata: Option<MetadataWrapper>,
@@ -234,12 +232,12 @@ impl Data {
     }
 }
 
-#[derive(Debug, Serialize, Copy, Clone)]
-enum Action {
+#[derive(Debug, Serialize, Copy, Clone, PartialEq)]
+pub enum Action {
     Created,
     Deleted,
     Modified,
     RenamedIn,
     RenamedOut,
-    UnknownAction
+    Unknown
 }
